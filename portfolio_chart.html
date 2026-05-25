@@ -532,23 +532,42 @@ const COLORS = [
   '#818cf8','#2dd4bf','#f87171','#e879f9','#60a5fa',
 ];
 
-/* ── 가격 자동 조회 (로컬 서버 /api/price/<ticker>) ── */
+/* ── 가격 자동 조회 ── */
+/* 전략 1: Stooq (무인증, CORS 허용, US 주식 지원) */
+async function fetchFromStooq(ticker) {
+  const url = `https://stooq.com/q/l/?s=${ticker.toLowerCase()}.us&f=sd2t2ohlcv&h&e=json`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+  if (!res.ok) throw new Error('stooq HTTP ' + res.status);
+  const json = await res.json();
+  const price = json?.symbols?.[0]?.close;
+  if (!price || price <= 0) throw new Error('stooq 가격 없음');
+  return Number(price);
+}
+
+/* 전략 2: Yahoo Finance via allorigins.win CORS 프록시 */
+async function fetchFromYahoo(ticker) {
+  const target = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker.toUpperCase()}?interval=1d&range=1d`;
+  const proxy  = `https://api.allorigins.win/get?url=${encodeURIComponent(target)}`;
+  const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+  if (!res.ok) throw new Error('allorigins HTTP ' + res.status);
+  const wrapper = await res.json();
+  const inner   = JSON.parse(wrapper.contents);
+  const meta    = inner?.chart?.result?.[0]?.meta;
+  const price   = meta?.regularMarketPrice ?? meta?.previousClose;
+  if (!price || price <= 0) throw new Error('yahoo 가격 없음');
+  return Number(price);
+}
+
 async function fetchPrice(ticker) {
-  try {
-    const res = await fetch(`/api/price/${ticker.toUpperCase()}`, {
-      signal: AbortSignal.timeout(8000)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'HTTP ' + res.status);
+  for (const fn of [fetchFromStooq, fetchFromYahoo]) {
+    try {
+      const price = await fn(ticker);
+      if (price) return price;
+    } catch (e) {
+      console.warn(e.message);
     }
-    const json = await res.json();
-    if (!json.price) throw new Error('가격 없음');
-    return json.price;
-  } catch (e) {
-    console.warn('fetchPrice 실패:', e.message);
-    return null;
   }
+  return null;
 }
 
 /* ── 종목 추가 ── */
