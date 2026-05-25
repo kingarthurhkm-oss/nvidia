@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>포트폴리오 원그래프</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 680px) {
+      .container { grid-template-columns: 1fr; }
+    }
+
+    /* ── 입력 패널 ── */
+    .panel {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .panel h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr auto;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      width: 100%;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      border-color: #60a5fa;
+    }
+
+    input::placeholder { color: #475569; }
+
+    .btn-add {
+      background: #3b82f6;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 9px 14px;
+      transition: background 0.2s;
+    }
+    .btn-add:hover { background: #2563eb; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2d3148;
+      margin: 16px 0;
+    }
+
+    /* ── 종목 리스트 ── */
+    .holdings-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .holding-item {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr auto;
+      gap: 8px;
+      align-items: center;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      padding: 10px 12px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .holding-ticker {
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.04em;
+    }
+
+    .holding-qty, .holding-value {
+      font-size: 0.85rem;
+      color: #94a3b8;
+    }
+
+    .holding-pct {
+      font-size: 0.8rem;
+      color: #60a5fa;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .btn-remove {
+      background: none;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .btn-remove:hover { color: #f87171; background: #1f1f2e; }
+
+    .color-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    .label-row {
+      display: flex;
+      align-items: center;
+    }
+
+    /* ── 총 자산 ── */
+    .total-bar {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    .total-bar span:last-child {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #34d399;
+    }
+
+    .fetch-status {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 4px;
+      min-height: 1em;
+    }
+    .fetch-status.ok  { color: #34d399; }
+    .fetch-status.err { color: #f87171; }
+    .fetch-status.loading { color: #fbbf24; }
+
+    /* ── 차트 패널 ── */
+    .chart-panel {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chart-panel h2 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      align-self: flex-start;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .chart-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 260px;
+      color: #334155;
+      gap: 10px;
+    }
+
+    .chart-empty svg { opacity: 0.4; }
+
+    /* ── 범례 ── */
+    .legend {
+      margin-top: 18px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+    }
+
+    .legend-left { display: flex; align-items: center; gap: 8px; }
+    .legend-pct  { font-weight: 700; color: #cbd5e1; }
+
+    /* ── 컬럼 헤더 ── */
+    .col-headers {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr auto;
+      gap: 8px;
+      padding: 0 4px 6px;
+      font-size: 0.72rem;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .empty-hint {
+      text-align: center;
+      color: #334155;
+      font-size: 0.85rem;
+      padding: 20px 0;
+    }
+  </style>
+</head>
+<body>
+
+<h1>포트폴리오 원그래프</h1>
+
+<div class="container">
+
+  <!-- 왼쪽: 입력 + 목록 -->
+  <div class="panel">
+    <h2>종목 추가</h2>
+
+    <div class="col-headers">
+      <span>티커</span>
+      <span>보유수량</span>
+      <span>주가(USD)</span>
+      <span></span>
+    </div>
+
+    <div class="input-row">
+      <input id="inp-ticker" type="text"   placeholder="예) AAPL" autocomplete="off" />
+      <input id="inp-qty"    type="number" placeholder="수량" min="0" step="any" />
+      <input id="inp-price"  type="number" placeholder="자동조회" min="0" step="any" />
+      <button class="btn-add" onclick="addHolding()" title="추가">+</button>
+    </div>
+
+    <div id="fetch-status" class="fetch-status"></div>
+
+    <hr class="divider" />
+
+    <div id="holdings-list" class="holdings-list">
+      <div class="empty-hint">위에서 종목을 추가하세요</div>
+    </div>
+
+    <div id="total-bar" class="total-bar" style="display:none">
+      <span>총 자산 평가액</span>
+      <span id="total-value">$0</span>
+    </div>
+  </div>
+
+  <!-- 오른쪽: 차트 -->
+  <div class="chart-panel">
+    <h2>자산 배분</h2>
+    <div id="chart-empty" class="chart-empty">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+        <circle cx="32" cy="32" r="28" stroke="#334155" stroke-width="3"/>
+        <path d="M32 4 A28 28 0 0 1 60 32" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span>종목을 추가하면<br/>차트가 표시됩니다</span>
+    </div>
+    <div class="chart-wrap" id="chart-wrap" style="display:none">
+      <canvas id="pie-chart"></canvas>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+</div>
+
+<script>
+/* ── 상태 ── */
+let holdings = [];   // { ticker, qty, price, color }
+let chartInstance = null;
+
+const COLORS = [
+  '#3b82f6','#a78bfa','#34d399','#f59e0b','#f87171',
+  '#38bdf8','#fb923c','#e879f9','#4ade80','#facc15',
+  '#818cf8','#2dd4bf','#f472b6','#c084fc','#60a5fa',
+];
+
+/* ── 가격 자동 조회 (Yahoo Finance CORS 프록시) ── */
+async function fetchPrice(ticker) {
+  const proxyUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker.toUpperCase()}?interval=1d&range=1d`;
+  const corsProxy = `https://corsproxy.io/?url=${encodeURIComponent(proxyUrl)}`;
+  try {
+    const res = await fetch(corsProxy, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const meta = json?.chart?.result?.[0]?.meta;
+    const price = meta?.regularMarketPrice ?? meta?.previousClose;
+    if (!price) throw new Error('가격 없음');
+    return price;
+  } catch {
+    return null;
+  }
+}
+
+/* ── 종목 추가 ── */
+async function addHolding() {
+  const tickerEl = document.getElementById('inp-ticker');
+  const qtyEl    = document.getElementById('inp-qty');
+  const priceEl  = document.getElementById('inp-price');
+  const status   = document.getElementById('fetch-status');
+
+  const ticker = tickerEl.value.trim().toUpperCase();
+  const qty    = parseFloat(qtyEl.value);
+  let   price  = parseFloat(priceEl.value);
+
+  if (!ticker) { alert('티커를 입력하세요.'); tickerEl.focus(); return; }
+  if (!qty || qty <= 0) { alert('보유수량을 입력하세요.'); qtyEl.focus(); return; }
+
+  if (!price || price <= 0) {
+    status.textContent = `${ticker} 주가 조회 중…`;
+    status.className = 'fetch-status loading';
+    price = await fetchPrice(ticker);
+    if (price) {
+      status.textContent = `${ticker} 주가: $${price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})} (자동 조회)`;
+      status.className = 'fetch-status ok';
+    } else {
+      status.textContent = '주가 자동 조회 실패 — 주가를 직접 입력해 주세요.';
+      status.className = 'fetch-status err';
+      priceEl.focus();
+      return;
+    }
+  } else {
+    status.textContent = '';
+    status.className = 'fetch-status';
+  }
+
+  const color = COLORS[holdings.length % COLORS.length];
+  holdings.push({ ticker, qty, price, color });
+
+  tickerEl.value = '';
+  qtyEl.value    = '';
+  priceEl.value  = '';
+  tickerEl.focus();
+
+  render();
+}
+
+/* ── 티커 입력 시 Enter 키 처리 ── */
+document.getElementById('inp-ticker').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-qty').focus();
+});
+document.getElementById('inp-qty').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-price').focus();
+});
+document.getElementById('inp-price').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addHolding();
+});
+
+/* ── 삭제 ── */
+function removeHolding(idx) {
+  holdings.splice(idx, 1);
+  render();
+}
+
+/* ── 포맷 ── */
+function fmt(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  return '$' + n.toFixed(2);
+}
+
+/* ── 전체 렌더 ── */
+function render() {
+  renderList();
+  renderChart();
+}
+
+function renderList() {
+  const container = document.getElementById('holdings-list');
+  const totalBar  = document.getElementById('total-bar');
+  const totalEl   = document.getElementById('total-value');
+
+  if (holdings.length === 0) {
+    container.innerHTML = '<div class="empty-hint">위에서 종목을 추가하세요</div>';
+    totalBar.style.display = 'none';
+    return;
+  }
+
+  const total = holdings.reduce((s, h) => s + h.qty * h.price, 0);
+  totalEl.textContent = fmt(total);
+  totalBar.style.display = 'flex';
+
+  container.innerHTML = holdings.map((h, i) => {
+    const val = h.qty * h.price;
+    const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+    return `
+      <div class="holding-item">
+        <div class="label-row">
+          <span class="color-dot" style="background:${h.color}"></span>
+          <span class="holding-ticker">${h.ticker}</span>
+        </div>
+        <span class="holding-qty">${h.qty.toLocaleString()}주</span>
+        <span class="holding-value">${fmt(val)}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="holding-pct">${pct}%</span>
+          <button class="btn-remove" onclick="removeHolding(${i})" title="삭제">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderChart() {
+  const empty    = document.getElementById('chart-empty');
+  const wrap     = document.getElementById('chart-wrap');
+  const legendEl = document.getElementById('legend');
+
+  if (holdings.length === 0) {
+    empty.style.display = 'flex';
+    wrap.style.display  = 'none';
+    legendEl.innerHTML  = '';
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    return;
+  }
+
+  empty.style.display = 'none';
+  wrap.style.display  = 'block';
+
+  const total  = holdings.reduce((s, h) => s + h.qty * h.price, 0);
+  const labels = holdings.map(h => h.ticker);
+  const data   = holdings.map(h => h.qty * h.price);
+  const colors = holdings.map(h => h.color);
+
+  if (chartInstance) {
+    chartInstance.data.labels = labels;
+    chartInstance.data.datasets[0].data   = data;
+    chartInstance.data.datasets[0].backgroundColor = colors;
+    chartInstance.update('active');
+  } else {
+    const ctx = document.getElementById('pie-chart').getContext('2d');
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors,
+          borderColor: '#0f1117',
+          borderWidth: 3,
+          hoverOffset: 12,
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '58%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => {
+                const val = ctx.parsed;
+                const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+                return ` ${fmt(val)}  (${pct}%)`;
+              }
+            },
+            backgroundColor: '#1e2235',
+            borderColor: '#3b4168',
+            borderWidth: 1,
+            titleColor: '#e2e8f0',
+            bodyColor: '#94a3b8',
+            padding: 12,
+          }
+        },
+        animation: { duration: 400, easing: 'easeInOutQuart' },
+      }
+    });
+  }
+
+  /* 범례 */
+  legendEl.innerHTML = holdings.map(h => {
+    const val = h.qty * h.price;
+    const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+    return `
+      <div class="legend-item">
+        <div class="legend-left">
+          <span class="color-dot" style="background:${h.color}"></span>
+          <span>${h.ticker}</span>
+        </div>
+        <span class="legend-pct">${pct}%</span>
+      </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
