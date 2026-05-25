@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080a14" />
   <title>포트폴리오 원그래프</title>
   <script>/* Chart.js v4.4.0 bundled */
 /*!
@@ -24,100 +25,187 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --bg-base:       #080a14;
+      --bg-surface:    #0d1020;
+      --bg-elevated:   #111527;
+      --bg-inset:      #090b18;
+      --bg-inset-hover:#0f1226;
+
+      --border-subtle: #1e2240;
+      --border-active: #3b4270;
+      --glow-blue:     rgba(99, 102, 241, 0.18);
+      --glow-blue-lg:  rgba(99, 102, 241, 0.28);
+      --glow-purple:   rgba(167, 139, 250, 0.14);
+
+      --accent-blue:   #6366f1;
+      --accent-blue-h: #818cf8;
+      --accent-purple: #a78bfa;
+      --accent-purple-h: #c084fc;
+      --accent-green:  #34d399;
+      --accent-red:    #f87171;
+      --accent-yellow: #fbbf24;
+
+      --text-primary:  #e8eaf6;
+      --text-secondary:#94a3b8;
+      --text-muted:    #64748b;
+      --text-ghost:    #3d4a6b;
+
+      --radius-sm:  8px;
+      --radius-md:  12px;
+      --radius-lg:  18px;
+
+      --transition-fast:   0.15s ease;
+      --transition-mid:    0.25s ease;
+      --transition-spring: 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
+      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-base);
+      background-image: radial-gradient(ellipse 80% 50% at 50% -10%,
+        rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+      color: var(--text-primary);
       min-height: 100vh;
-      padding: 24px 16px;
+      padding: 32px 16px;
     }
 
     h1 {
       text-align: center;
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 28px;
-      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      font-size: 1.75rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 36px;
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 60%, #818cf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
+      filter: drop-shadow(0 0 18px rgba(129, 140, 248, 0.35));
     }
 
     .container {
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 24px;
+      align-items: start;
     }
 
-    @media (max-width: 680px) {
-      .container { grid-template-columns: 1fr; }
-    }
-
-    /* ── 입력 패널 ── */
+    /* ── 패널 공통 ── */
     .panel {
-      background: #1a1d27;
-      border: 1px solid #2d3148;
-      border-radius: 16px;
-      padding: 20px;
+      background: linear-gradient(160deg,
+        rgba(99, 102, 241, 0.04) 0%,
+        var(--bg-elevated) 40%,
+        var(--bg-surface) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.06),
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: box-shadow var(--transition-mid), border-color var(--transition-mid);
+    }
+    .panel:hover {
+      border-color: var(--border-active);
+      box-shadow:
+        0 0 0 1px var(--glow-blue),
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
-    .panel h2 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #94a3b8;
+    .panel h2,
+    .chart-panel h2 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
       margin-bottom: 16px;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.1em;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
+    /* ── 컬럼 헤더 ── */
+    .col-headers {
+      display: grid;
+      grid-template-columns: 2fr 1.5fr 1.5fr auto;
+      gap: 8px;
+      padding: 0 2px 8px;
+      font-size: 0.68rem;
+      color: var(--text-ghost);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    /* ── 입력 행 ── */
     .input-row {
       display: grid;
       grid-template-columns: 2fr 1.5fr 1.5fr auto;
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       align-items: center;
     }
 
     input[type="text"],
     input[type="number"] {
-      background: #0f1117;
-      border: 1px solid #2d3148;
-      border-radius: 8px;
-      color: #e2e8f0;
-      font-size: 0.9rem;
-      padding: 9px 12px;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 0.88rem;
+      padding: 10px 12px;
+      min-height: 40px;
       width: 100%;
-      transition: border-color 0.2s;
+      transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
       outline: none;
     }
-
+    input[type="text"]:hover,
+    input[type="number"]:hover {
+      border-color: #2d3660;
+    }
     input[type="text"]:focus,
     input[type="number"]:focus {
-      border-color: #60a5fa;
+      border-color: var(--accent-blue);
+      box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.18),
+        inset 0 1px 3px rgba(0, 0, 0, 0.3);
     }
-
-    input::placeholder { color: #475569; }
+    input::placeholder { color: var(--text-ghost); }
 
     .btn-add {
-      background: #3b82f6;
-      border: none;
-      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-blue), #4f46e5);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      border-radius: var(--radius-sm);
       color: #fff;
       cursor: pointer;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
+      font-weight: 700;
       line-height: 1;
-      padding: 9px 14px;
-      transition: background 0.2s;
+      padding: 10px 16px;
+      min-height: 40px;
+      box-shadow: 0 2px 12px rgba(99, 102, 241, 0.3);
+      transition: background var(--transition-fast),
+                  box-shadow var(--transition-fast),
+                  transform var(--transition-fast);
     }
-    .btn-add:hover { background: #2563eb; }
+    .btn-add:hover {
+      background: linear-gradient(135deg, var(--accent-blue-h), var(--accent-blue));
+      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.45);
+      transform: translateY(-1px);
+    }
+    .btn-add:active {
+      transform: translateY(0) scale(0.97);
+      box-shadow: 0 1px 6px rgba(99, 102, 241, 0.2);
+    }
 
     .divider {
       border: none;
-      border-top: 1px solid #2d3148;
+      border-top: 1px solid var(--border-subtle);
       margin: 16px 0;
+      opacity: 0.7;
     }
 
     /* ── 종목 리스트 ── */
@@ -128,54 +216,73 @@
       grid-template-columns: 2fr 1.5fr 1.5fr auto;
       gap: 8px;
       align-items: center;
-      background: #0f1117;
-      border: 1px solid #2d3148;
-      border-radius: 10px;
-      padding: 10px 12px;
-      animation: fadeIn 0.2s ease;
+      background: var(--bg-inset);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 11px 14px;
+      animation: holdingSlideIn var(--transition-spring) both;
+      transition: background var(--transition-fast),
+                  border-color var(--transition-fast),
+                  box-shadow var(--transition-fast);
+    }
+    .holding-item:hover {
+      background: var(--bg-inset-hover);
+      border-color: var(--border-active);
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to   { opacity: 1; transform: translateY(0); }
+    @keyframes holdingSlideIn {
+      0%   { opacity: 0; transform: translateY(-8px) scale(0.97); }
+      60%  { opacity: 1; transform: translateY(2px) scale(1.005); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
     .holding-ticker {
       font-weight: 700;
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      color: var(--text-primary);
     }
 
     .holding-qty, .holding-value {
-      font-size: 0.85rem;
-      color: #94a3b8;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
     }
 
     .holding-pct {
-      font-size: 0.8rem;
-      color: #60a5fa;
-      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--accent-blue-h);
+      font-weight: 700;
       text-align: right;
+      letter-spacing: 0.02em;
     }
 
     .btn-remove {
       background: none;
-      border: none;
-      color: #475569;
+      border: 1px solid transparent;
+      color: var(--text-ghost);
       cursor: pointer;
-      font-size: 1rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      transition: color 0.2s, background 0.2s;
+      font-size: 0.8rem;
+      padding: 4px 7px;
+      min-height: 28px;
+      min-width: 28px;
+      border-radius: var(--radius-sm);
+      transition: color var(--transition-fast),
+                  background var(--transition-fast),
+                  border-color var(--transition-fast);
     }
-    .btn-remove:hover { color: #f87171; background: #1f1f2e; }
+    .btn-remove:hover {
+      color: var(--accent-red);
+      background: rgba(248, 113, 113, 0.1);
+      border-color: rgba(248, 113, 113, 0.2);
+    }
 
     .color-dot {
       display: inline-block;
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      margin-right: 6px;
+      margin-right: 8px;
       flex-shrink: 0;
     }
 
@@ -187,56 +294,73 @@
     /* ── 총 자산 ── */
     .total-bar {
       margin-top: 16px;
-      padding: 12px 14px;
-      background: #0f1117;
-      border: 1px solid #2d3148;
-      border-radius: 10px;
+      padding: 13px 16px;
+      background: linear-gradient(90deg,
+        rgba(52, 211, 153, 0.06) 0%,
+        var(--bg-inset) 100%);
+      border: 1px solid rgba(52, 211, 153, 0.18);
+      border-radius: var(--radius-md);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.06);
     }
     .total-bar span:last-child {
-      font-weight: 700;
-      font-size: 1rem;
-      color: #34d399;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--accent-green);
+      letter-spacing: -0.01em;
     }
 
     .fetch-status {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 4px;
-      min-height: 1em;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      min-height: 1.2em;
+      letter-spacing: 0.01em;
     }
-    .fetch-status.ok  { color: #34d399; }
-    .fetch-status.err { color: #f87171; }
-    .fetch-status.loading { color: #fbbf24; }
+    .fetch-status.ok      { color: var(--accent-green); }
+    .fetch-status.err     { color: var(--accent-red); }
+    .fetch-status.loading { color: var(--accent-yellow); }
 
     /* ── 차트 패널 ── */
     .chart-panel {
-      background: #1a1d27;
-      border: 1px solid #2d3148;
-      border-radius: 16px;
-      padding: 20px;
+      background: linear-gradient(160deg,
+        rgba(167, 139, 250, 0.04) 0%,
+        var(--bg-elevated) 40%,
+        var(--bg-surface) 100%);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 24px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      box-shadow:
+        0 0 0 1px rgba(167, 139, 250, 0.06),
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      transition: box-shadow var(--transition-mid), border-color var(--transition-mid);
     }
-
-    .chart-panel h2 {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #94a3b8;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      align-self: flex-start;
+    .chart-panel:hover {
+      border-color: var(--border-active);
+      box-shadow:
+        0 0 0 1px var(--glow-purple),
+        0 8px 32px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
 
     .chart-wrap {
       position: relative;
       width: 100%;
-      max-width: 340px;
+      max-width: 380px;
+      animation: chartFadeIn 0.5s ease both;
+    }
+
+    @keyframes chartFadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to   { opacity: 1; transform: scale(1); }
     }
 
     .chart-empty {
@@ -244,49 +368,100 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 260px;
-      color: #334155;
-      gap: 10px;
+      height: 280px;
+      color: var(--text-ghost);
+      gap: 14px;
+      font-size: 0.85rem;
+      text-align: center;
+      line-height: 1.6;
     }
-
-    .chart-empty svg { opacity: 0.4; }
+    .chart-empty svg { opacity: 0.35; }
 
     /* ── 범례 ── */
     .legend {
-      margin-top: 18px;
+      margin-top: 20px;
       width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+    .legend.legend-multi {
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
+      padding: 5px 8px;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition-fast);
+      cursor: default;
     }
+    .legend-item:hover { background: rgba(255, 255, 255, 0.04); }
 
-    .legend-left { display: flex; align-items: center; gap: 8px; }
-    .legend-pct  { font-weight: 700; color: #cbd5e1; }
-
-    /* ── 컬럼 헤더 ── */
-    .col-headers {
-      display: grid;
-      grid-template-columns: 2fr 1.5fr 1.5fr auto;
-      gap: 8px;
-      padding: 0 4px 6px;
-      font-size: 0.72rem;
-      color: #475569;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+    .legend-left { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+    .legend-pct  { font-weight: 700; color: var(--text-primary); font-size: 0.78rem; }
 
     .empty-hint {
       text-align: center;
-      color: #334155;
-      font-size: 0.85rem;
-      padding: 20px 0;
+      color: var(--text-ghost);
+      font-size: 0.82rem;
+      padding: 24px 0;
+      line-height: 1.7;
+    }
+
+    /* ── 반응형: 태블릿 (481px – 768px) ── */
+    @media (max-width: 768px) and (min-width: 481px) {
+      .container { gap: 16px; }
+      .panel, .chart-panel { padding: 18px; }
+    }
+
+    /* ── 반응형: 모바일 (≤ 480px) ── */
+    @media (max-width: 480px) {
+      body { padding: 20px 12px; }
+      h1   { font-size: 1.35rem; margin-bottom: 24px; }
+
+      .container { grid-template-columns: 1fr; gap: 16px; }
+
+      .panel,
+      .chart-panel { padding: 16px; border-radius: var(--radius-md); }
+
+      .col-headers { grid-template-columns: 1fr 1fr; }
+      .col-headers span:nth-child(3),
+      .col-headers span:nth-child(4) { display: none; }
+
+      .input-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 8px;
+      }
+      #inp-ticker { grid-column: 1; grid-row: 1; }
+      #inp-qty    { grid-column: 2; grid-row: 1; }
+      #inp-price  { grid-column: 1; grid-row: 2; }
+      #btn-add    { grid-column: 2; grid-row: 2; min-height: 44px; }
+
+      input[type="text"],
+      input[type="number"] { min-height: 44px; font-size: 1rem; }
+
+      .holding-item {
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        gap: 4px 8px;
+        padding: 12px;
+      }
+      .holding-item .label-row      { grid-column: 1; grid-row: 1; }
+      .holding-item .holding-qty    { grid-column: 2; grid-row: 1; text-align: right; }
+      .holding-item .holding-value  { grid-column: 1; grid-row: 2; }
+      .holding-item > div:last-child { grid-column: 2; grid-row: 2; justify-content: flex-end; display: flex; }
+
+      .btn-remove { min-height: 36px; min-width: 36px; }
+
+      .chart-wrap { max-width: 100%; }
+
+      .legend.legend-multi { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -311,7 +486,7 @@
       <input id="inp-ticker" type="text"   placeholder="예) AAPL" autocomplete="off" />
       <input id="inp-qty"    type="number" placeholder="수량" min="0" step="any" />
       <input id="inp-price"  type="number" placeholder="자동조회" min="0" step="any" />
-      <button class="btn-add" onclick="addHolding()" title="추가">+</button>
+      <button id="btn-add" class="btn-add" onclick="addHolding()" title="추가">+</button>
     </div>
 
     <div id="fetch-status" class="fetch-status"></div>
@@ -333,8 +508,8 @@
     <h2>자산 배분</h2>
     <div id="chart-empty" class="chart-empty">
       <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="28" stroke="#334155" stroke-width="3"/>
-        <path d="M32 4 A28 28 0 0 1 60 32" stroke="#475569" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="32" r="28" stroke="#2a3558" stroke-width="3"/>
+        <path d="M32 4 A28 28 0 0 1 60 32" stroke="#3b4d7a" stroke-width="3" stroke-linecap="round"/>
       </svg>
       <span>종목을 추가하면<br/>차트가 표시됩니다</span>
     </div>
@@ -348,13 +523,13 @@
 
 <script>
 /* ── 상태 ── */
-let holdings = [];   // { ticker, qty, price, color }
+let holdings = [];
 let chartInstance = null;
 
 const COLORS = [
-  '#3b82f6','#a78bfa','#34d399','#f59e0b','#f87171',
-  '#38bdf8','#fb923c','#e879f9','#4ade80','#facc15',
-  '#818cf8','#2dd4bf','#f472b6','#c084fc','#60a5fa',
+  '#6366f1','#a78bfa','#34d399','#f59e0b','#f472b6',
+  '#38bdf8','#fb923c','#c084fc','#4ade80','#facc15',
+  '#818cf8','#2dd4bf','#f87171','#e879f9','#60a5fa',
 ];
 
 /* ── 가격 자동 조회 (로컬 서버 /api/price/<ticker>) ── */
@@ -471,7 +646,7 @@ function renderList() {
     return `
       <div class="holding-item">
         <div class="label-row">
-          <span class="color-dot" style="background:${h.color}"></span>
+          <span class="color-dot" style="background:${h.color}; box-shadow: 0 0 7px ${h.color}80"></span>
           <span class="holding-ticker">${h.ticker}</span>
         </div>
         <span class="holding-qty">${h.qty.toLocaleString()}주</span>
@@ -519,9 +694,9 @@ function renderChart() {
         datasets: [{
           data,
           backgroundColor: colors,
-          borderColor: '#0f1117',
+          borderColor: '#080a14',
           borderWidth: 3,
-          hoverOffset: 12,
+          hoverOffset: 14,
         }]
       },
       options: {
@@ -537,15 +712,18 @@ function renderChart() {
                 return ` ${fmt(val)}  (${pct}%)`;
               }
             },
-            backgroundColor: '#1e2235',
-            borderColor: '#3b4168',
+            backgroundColor: '#0d1226',
+            borderColor: 'rgba(99, 102, 241, 0.35)',
             borderWidth: 1,
-            titleColor: '#e2e8f0',
+            titleColor: '#e8eaf6',
             bodyColor: '#94a3b8',
-            padding: 12,
+            padding: 14,
+            cornerRadius: 10,
+            titleFont: { weight: '700', size: 13 },
+            bodyFont: { size: 12 },
           }
         },
-        animation: { duration: 400, easing: 'easeInOutQuart' },
+        animation: { duration: 500, easing: 'easeInOutQuart' },
       }
     });
   }
@@ -557,12 +735,13 @@ function renderChart() {
     return `
       <div class="legend-item">
         <div class="legend-left">
-          <span class="color-dot" style="background:${h.color}"></span>
+          <span class="color-dot" style="background:${h.color}; box-shadow: 0 0 7px ${h.color}80"></span>
           <span>${h.ticker}</span>
         </div>
         <span class="legend-pct">${pct}%</span>
       </div>`;
   }).join('');
+  legendEl.className = 'legend' + (holdings.length >= 5 ? ' legend-multi' : '');
 }
 </script>
 </body>
